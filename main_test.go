@@ -1,12 +1,12 @@
 package main
 
 import (
-	"testing"
 	"fmt"
+	"testing"
 )
 
 type pair struct {
-	ip string
+	ip  string
 	err error
 }
 
@@ -22,7 +22,7 @@ func TestParseIPv4Adress(t *testing.T) {
 		{pair{"234.255.255.255", nil}, "234.255.255.255"},
 		{pair{"0.0.0.0", nil}, "0.0.0.0"},
 		{pair{"255.255.255.255", nil}, "255.255.255.255"},
-		{pair{"70.230.2.7", fmt.Errorf("invalid IP address")}, ".70.230.2.7"},
+		{pair{"70.230.2.7", fmt.Errorf("invalid IP address")}, "70.230.2.7"},
 		{pair{"9.10.111.13", nil}, "9.10.111.13"},
 		{pair{"192.34.8.183", nil}, "192.34.8.183"},
 
@@ -72,10 +72,14 @@ func TestParseIPv4Adress(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.data, func(t *testing.T) {
-			got, err := ParseIPv4Address(test.data)
+			ptr, err := ParseIPv4Adress(test.data)
+			got := ""
+			if err == nil {
+				got = ptr.Decimal()
+			}
 			if got != test.want.ip || (err != nil && err.Error() != test.want.err.Error()) {
-				t.Errorf("got %v, %v, want %v, %v", got, err, test.want.ip, test.want.err)
+				t.Errorf("got %v, %v; want %v, %v", got, err, test.want.ip, test.want.err)
 			}
 		})
 	}
-
+}
