@@ -83,3 +83,69 @@ func TestParseIPv4Adress(t *testing.T) {
 		})
 	}
 }
+
+func TestDetectClass(t *testing.T) {
+	var tests = []test{
+		{pair{"A", nil}, "0.0.0.0"},
+		{pair{"A", nil}, "98.91.255.76"},
+		{pair{"A", nil}, "127.98.12.1"},
+		{pair{"A", nil}, "0.35.123.255"},
+		{pair{"A", nil}, "127.255.255.255"},
+		{pair{"B", nil}, "128.0.0.0"},
+		{pair{"B", nil}, "191.255.255.255"},
+		{pair{"B", nil}, "141.45.182.99"},
+		{pair{"B", nil}, "165.255.255.89"},
+		{pair{"C", nil}, "192.0.0.0"},
+		{pair{"C", nil}, "223.255.255.255"},
+		{pair{"C", nil}, "200.200.200.200"},
+		{pair{"C", nil}, "204.255.0.45"},
+		{pair{"D", nil}, "224.0.0.0"},
+		{pair{"D", nil}, "239.255.255.255"},
+		{pair{"D", nil}, "230.56.98.251"},
+		{pair{"D", nil}, "225.255.45.1"},
+		{pair{"E", nil}, "240.0.0.0"},
+		{pair{"E", nil}, "255.255.255.255"},
+		{pair{"E", nil}, "245.56.123.245"},
+		{pair{"E", nil}, "250.255.98.234"},
+	}
+	for _, test := range tests {
+		t.Run(test.data, func(t *testing.T) {
+			ptr, _ := ParseIPv4Adress(test.data)
+			got, err := DetectClass(ptr)
+			if err != nil || got != test.want.ip {
+				t.Errorf("got %v, %v; want %v, %v", got, err, test.want.ip, test.want.err)
+			}
+		})
+	}
+}
+
+type tripple struct {
+	min string
+	max string
+	err error
+}
+
+type tptr struct {
+	want tripple
+	data string
+}
+
+func TestGetBordersClass(t *testing.T) {
+	var tests = []tptr{
+		{tripple{"0.0.0.0", "127.255.255.255", nil}, "A"},
+		{tripple{"128.0.0.0", "191.255.255.255", nil}, "B"},
+		{tripple{"192.0.0.0", "223.255.255.255", nil}, "C"},
+		{tripple{"224.0.0.0", "239.255.255.255", nil}, "D"},
+		{tripple{"240.0.0.0", "255.255.255.255", nil}, "E"},
+		{tripple{"", "", fmt.Errorf("invalid class")}, "X"},
+		{tripple{"", "", fmt.Errorf("invalid class")}, "F"},
+	}
+	for _, test := range tests {
+		t.Run(test.data, func(t *testing.T) {
+			min, max, err := GetBordersClass(test.data)
+			if (err == nil && test.want.err != nil) || (err != nil && test.want.err == nil) || (err != nil && err.Error() != test.want.err.Error()) || min != test.want.min || max != test.want.max {
+				t.Errorf("got '%v', '%v', '%v'; want '%v', '%v', '%v'", min, max, err, test.want.min, test.want.max, test.want.err)
+			}
+		})
+	}
+}
