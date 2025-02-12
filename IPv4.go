@@ -1,4 +1,4 @@
-package main
+package IpMasks
 
 import (
 	"fmt"
@@ -109,4 +109,57 @@ func ParseIPv4Adress(str string) (IPv4, error) {
 		return 0b0, fmt.Errorf("invalid IP address")
 	}
 	return ip, nil
+}
+
+func SetMask(ip IPv4) IPv4 {
+	mask := IPv4(0b11111111_11111111_11111111_11111111)
+	for i := 0; i < 32; i++ {
+		if ip&mask != ip {
+			return 0b10000000_00000000_00000000_00000000 | (mask >> 1)
+		}
+		mask = mask << 1
+	}
+	return mask
+}
+
+type network_metadata struct {
+	ip            IPv4   // done
+	mask          IPv4   // done
+	broadcast     IPv4   // done
+	class         string // done
+	ipQuantity    int    // done
+	hostsQuantity int    // done
+	top5          []IPv4 //         TO DO Т^Т
+	low5          []IPv4
+}
+
+func GetNetworkInfo(ip IPv4, networks int, hosts int) (network_metadata, error) {
+	var this_network network_metadata
+	this_network.class, _ = DetectClass(ip)
+	this_network.ip = ip
+	func() {
+		if networks < 0 || hosts < 0 {
+			panic("invalid input")
+		}
+		if int64(networks)+int64(hosts)+int64(SetMask(ip)) > 0b11111111_11111111_11111111_11111111 {
+			panic("invalid input")
+		}
+	}()
+
+	this_network.mask = AddBits(SetMask(ip), numberOfBits(networks))
+	this_network.broadcast = ip | ^this_network.mask
+	this_network.ipQuantity = int(^SetMask(ip))
+	this_network.hostsQuantity = this_network.ipQuantity - 2
+	var num int
+	if this_network.hostsQuantity*this_network.ipQuantity < 5 {
+		num = this_network.hostsQuantity * this_network.ipQuantity
+	} else {
+		num = 5
+	}
+	for i := range num {
+		this_network.top5 = append(this_network.top5, this_network.ip+IPv4(i))
+		this_network.low5 = append(this_network.low5, this_network.broadcast-IPv4(i))
+	}
+
+	return this_network, nil
 }
