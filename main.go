@@ -6,45 +6,14 @@ import (
 	"strings"
 )
 
-type IPV4Adress struct {
-	FirstOctet  int
-	SecondOctet int
-	ThirdOctet  int
-	FourthOctet int
+type IPv4 uint32
+
+func (ip IPv4) Decimal() string {
+	return fmt.Sprintf("%d.%d.%d.%d", ip>>24, ip>>16&0b11111111, ip>>8&0b11111111, ip&0b11111111)
 }
 
-func MakeIPV4Adress(firstOctet, secondOctet, thirdOctet, fourthOctet int) IPV4Adress {
-	return IPV4Adress{
-		FirstOctet:  firstOctet,
-		SecondOctet: secondOctet,
-		ThirdOctet:  thirdOctet,
-		FourthOctet: fourthOctet,
-	}
-}
-
-func (ip *IPV4Adress) Decimal() string {
-	return fmt.Sprintf("%d.%d.%d.%d", ip.FirstOctet, ip.SecondOctet, ip.ThirdOctet, ip.FourthOctet)
-}
-
-func (ip *IPV4Adress) Binary() string {
-	return fmt.Sprintf("%08b.%08b.%08b.%08b", ip.FirstOctet, ip.SecondOctet, ip.ThirdOctet, ip.FourthOctet)
-}
-
-func (ip *IPV4Adress) Set(index int, value int) error {
-	if index < 0 || index > 3 {
-		return fmt.Errorf("invalid index")
-	}
-	switch index {
-	case 0:
-		ip.FirstOctet = value
-	case 1:
-		ip.SecondOctet = value
-	case 2:
-		ip.ThirdOctet = value
-	case 3:
-		ip.FourthOctet = value
-	}
-	return nil
+func (ip IPv4) Binary() string {
+	return fmt.Sprintf("%08b.%08b.%08b.%08b", ip>>24, ip>>16&0b11111111, ip>>8&0b11111111, ip&0b11111111)
 }
 
 func BinaryToDecimal(str string) (int, error) {
@@ -78,63 +47,66 @@ func ToDecimal(str string) (int, error) {
 	return number, nil
 }
 
-func DetectClass(ip IPV4Adress) (string, error) {
-	if ip.FirstOctet&0b11110000 == 0b11110000 {
+func DetectClass(ip IPv4) (string, error) {
+	if ip&0b11110000_00000000_00000000_00000000 == 0b11110000_00000000_00000000_00000000 {
 		return "E", nil
-	} else if ip.FirstOctet&0b11100000 == 0b11100000 {
+	} else if ip&0b11100000_00000000_00000000_00000000 == 0b11100000_00000000_00000000_00000000 {
 		return "D", nil
-	} else if ip.FirstOctet&0b11000000 == 0b11000000 {
+	} else if ip&0b11000000_00000000_00000000_00000000 == 0b11000000_00000000_00000000_00000000 {
 		return "C", nil
-	} else if ip.FirstOctet&0b10000000 == 0b10000000 {
+	} else if ip&0b10000000_00000000_00000000_00000000 == 0b10000000_00000000_00000000_00000000 {
 		return "B", nil
-	} else if ip.FirstOctet&0b10000000 == 0 {
+	} else if ip&0b10000000_00000000_00000000_00000000 == 0 {
 		return "A", nil
 	} else {
 		return "X", fmt.Errorf("invalid IP address")
 	}
 }
 
-func GetBordersClass(class string) (string, string, error) {
+func GetBordersClass(class string) (IPv4, IPv4, error) {
 	switch class {
-	case "A":
-		return "0.0.0.0", "127.255.255.255", nil
+	case "A": //"127.255.255.255"
+		return IPv4(0), IPv4(0b01111111_11111111_11111111_11111111), nil
 	case "B":
-		return "128.0.0.0", "191.255.255.255", nil
+		return IPv4(0b10000000_00000000_00000000_00000000), IPv4(0b10111111_11111111_11111111_11111111), nil
 	case "C":
-		return "192.0.0.0", "223.255.255.255", nil
+		return IPv4(0b11000000_00000000_00000000_00000000), IPv4(0b11011111_11111111_11111111_11111111), nil
 	case "D":
-		return "224.0.0.0", "239.255.255.255", nil
+		return IPv4(0b11100000_00000000_00000000_00000000), IPv4(0b11101111_11111111_11111111_11111111), nil
 	case "E":
-		return "240.0.0.0", "255.255.255.255", nil
+		return IPv4(0b11110000_00000000_00000000_00000000), IPv4(0b11111111_11111111_11111111_11111111), nil
 	default:
-		return "", "", fmt.Errorf("invalid class")
+		return IPv4(0), IPv4(0), fmt.Errorf("invalid class")
 	}
 }
 
-func ParseIPv4Adress(str string) (IPV4Adress, error) {
-	ip := IPV4Adress{}
+func ParseIPv4Adress(str string) (IPv4, error) {
+	var ip IPv4 = 0
 	if len(str) == 35 && str[8] == '.' && str[17] == '.' && str[26] == '.' {
-		for index, component := range strings.Split(str, ".") {
-			if num, err := BinaryToDecimal(component); err == nil {
-				ip.Set(index, num)
-			} else {
-				return IPV4Adress{0, 0, 0, 0}, fmt.Errorf("invalid IP address")
+		if parts := strings.Split(str, "."); len(parts) == 4 {
+			for index, component := range parts {
+				if num, err := BinaryToDecimal(component); err == nil {
+					ip = ip | IPv4(num)<<(24-8*index)
+				} else {
+					return 0b0, fmt.Errorf("invalid IP address")
+				}
 			}
 		}
+
 	} else if len(str) > 6 && len(str) < 16 {
 		components := strings.Split(str, ".")
 		if len(components) != 4 {
-			return IPV4Adress{0, 0, 0, 0}, fmt.Errorf("invalid IP address")
+			return 0b0, fmt.Errorf("invalid IP address")
 		}
 		for index, component := range components {
 			if num, err := ToDecimal(component); err == nil && num >= 0 && num <= 255 {
-				ip.Set(index, num)
+				ip = ip | IPv4(num)<<(24-8*index)
 			} else {
-				return IPV4Adress{0, 0, 0, 0}, fmt.Errorf("invalid IP address")
+				return 0b0, fmt.Errorf("invalid IP address")
 			}
 		}
 	} else {
-		return IPV4Adress{0, 0, 0, 0}, fmt.Errorf("invalid IP address")
+		return 0b0, fmt.Errorf("invalid IP address")
 	}
 	return ip, nil
 }
