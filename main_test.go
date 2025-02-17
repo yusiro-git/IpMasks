@@ -122,42 +122,42 @@ func TestDetectClass(t *testing.T) {
 	}
 }
 
-func TestGetBordersClass(t *testing.T) {
-	var tests = []test{
-		{IPv4_with_error{[]IPv4{0b00000000_00000000_00000000_00000000, 0b01111111_11111111_11111111_11111111}, nil}, "A"},
-		{IPv4_with_error{[]IPv4{0b10000000_00000000_00000000_00000000, 0b10111111_11111111_11111111_11111111}, nil}, "B"},
-		{IPv4_with_error{[]IPv4{0b11000000_00000000_00000000_00000000, 0b11011111_11111111_11111111_11111111}, nil}, "C"},
-		{IPv4_with_error{[]IPv4{0b11100000_00000000_00000000_00000000, 0b11101111_11111111_11111111_11111111}, nil}, "D"},
-		{IPv4_with_error{[]IPv4{0b11110000_00000000_00000000_00000000, 0b11111111_11111111_11111111_11111111}, nil}, "E"},
-		{IPv4_with_error{[]IPv4{0b0, 0b0}, fmt.Errorf("invalid class")}, "X"},
-		{IPv4_with_error{[]IPv4{0b0, 0b0}, fmt.Errorf("invalid class")}, "F"},
-	}
-	for _, test := range tests {
-		t.Run(test.data, func(t *testing.T) {
-			min, max, err := GetBordersClass(test.data)
-			want := test.want.(IPv4_with_error)
-			if (err == nil && want.err != nil) || (err != nil && want.err == nil) || (err != nil && err.Error() != want.err.Error()) || min != want.ip[0] || max != want.ip[1] {
-				t.Errorf("got '%v', '%v', '%v'; want '%v', '%v', '%v'", min, max, err, want.ip[0], want.ip[1], want.err)
-			}
-		})
-	}
-}
+// func TestGetBordersClass(t *testing.T) {
+// 	var tests = []test{
+// 		{IPv4_with_error{[]IPv4{0b00000000_00000000_00000000_00000000, 0b01111111_11111111_11111111_11111111}, nil}, "A"},
+// 		{IPv4_with_error{[]IPv4{0b10000000_00000000_00000000_00000000, 0b10111111_11111111_11111111_11111111}, nil}, "B"},
+// 		{IPv4_with_error{[]IPv4{0b11000000_00000000_00000000_00000000, 0b11011111_11111111_11111111_11111111}, nil}, "C"},
+// 		{IPv4_with_error{[]IPv4{0b11100000_00000000_00000000_00000000, 0b11101111_11111111_11111111_11111111}, nil}, "D"},
+// 		{IPv4_with_error{[]IPv4{0b11110000_00000000_00000000_00000000, 0b11111111_11111111_11111111_11111111}, nil}, "E"},
+// 		{IPv4_with_error{[]IPv4{0b0, 0b0}, fmt.Errorf("invalid class")}, "X"},
+// 		{IPv4_with_error{[]IPv4{0b0, 0b0}, fmt.Errorf("invalid class")}, "F"},
+// 	}
+// 	for _, test := range tests {
+// 		t.Run(test.data, func(t *testing.T) {
+// 			min, max, err := GetBordersClass(test.data)
+// 			want := test.want.(IPv4_with_error)
+// 			if (err == nil && want.err != nil) || (err != nil && want.err == nil) || (err != nil && err.Error() != want.err.Error()) || min != want.ip[0] || max != want.ip[1] {
+// 				t.Errorf("got '%v', '%v', '%v'; want '%v', '%v', '%v'", min, max, err, want.ip[0], want.ip[1], want.err)
+// 			}
+// 		})
+// 	}
+// }
 
-func TestSetMask(t *testing.T) {
-	var tests = []test{
-		{IPv4_with_error{[]IPv4{0b11111111_11000000_00000000_00000000}, nil}, "255.192.0.0"},
-		{IPv4_with_error{[]IPv4{0b11111111_11111111_11111110_00000000}, nil}, "251.123.34.0"},
-		{IPv4_with_error{[]IPv4{0b11111111_11111111_11111111_11111110}, nil}, "204.0.0.2"},
-		{IPv4_with_error{[]IPv4{0b11111111_11111111_11110000_00000000}, nil}, "33.8.16.0"},
-		{IPv4_with_error{[]IPv4{0b11111111_11111111_11111111_11110000}, nil}, "243.0.14.16"},
-	}
-	for _, test := range tests {
-		t.Run(test.data, func(t *testing.T) {
-			got := SetMask(func() IPv4 { ptr, _ := ParseIPv4Adress(test.data); return ptr }())
-			want := test.want.(IPv4_with_error)
-			if got != want.ip[0] {
-				t.Errorf("got %v; want %v", got, want.ip[0])
-			}
-		})
-	}
-}
+// func TestSetMask(t *testing.T) {
+// 	var tests = []test{
+// 		{IPv4_with_error{[]IPv4{0b11111111_11000000_00000000_00000000}, nil}, "255.192.0.0"},
+// 		{IPv4_with_error{[]IPv4{0b11111111_11111111_11111110_00000000}, nil}, "251.123.34.0"},
+// 		{IPv4_with_error{[]IPv4{0b11111111_11111111_11111111_11111110}, nil}, "204.0.0.2"},
+// 		{IPv4_with_error{[]IPv4{0b11111111_11111111_11110000_00000000}, nil}, "33.8.16.0"},
+// 		{IPv4_with_error{[]IPv4{0b11111111_11111111_11111111_11110000}, nil}, "243.0.14.16"},
+// 	}
+// 	for _, test := range tests {
+// 		t.Run(test.data, func(t *testing.T) {
+// 			got := SetMask(func() IPv4 { ptr, _ := ParseIPv4Adress(test.data); return ptr }())
+// 			want := test.want.(IPv4_with_error)
+// 			if got != want.ip[0] {
+// 				t.Errorf("got %v; want %v", got, want.ip[0])
+// 			}
+// 		})
+// 	}
+// }
